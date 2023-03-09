@@ -1,0 +1,252 @@
+CS 224 / Lab 7
+Sec 02
+Kutay Tire
+2200178
+
+Group Mate
+
+Korhan Kemal Kaya
+21903357
+
+a.)
+SFR:
+
+PORTx: This SFR is used to either read data from port pins or write data to them. The PORTx 
+pins become "High" when "1" is written and become "low" when "0" is written.
+
+- PORTE: This is used to read input from push buttons.
+- PORTC: This is used to write the output to DC Motor.
+
+TRISx: This SFR is used to determine whether the I/O port is an input or an output. If it is
+"1", then the pin is input and when it is "0", the pin is output.
+
+- TRISE: This is used to specify that E port is input.
+- TRISC: This is used to specify that C port is the output.
+
+b.)
+
+/*
+* DC Motor Simulation
+* Connect portC to DC Motor, use 5 Volt and pull up.
+* Connect portE to push-buttons, use 3.3V, pull up.
+*/
+//
+
+void main() {
+
+ AD1PCFG = 0xFFFF; // Configure 
+ DDPCON.JTAGEN = 0; // disable JTAG
+
+ TRISC = 0x0000; //portC is used as an output (for DC Motor)
+ PORTC = 0Xffff;  
+
+
+ TRISE = 0xFFFF; //portE is used as an input (for push buttons)
+ PORTE = 0X0000;  
+
+ 
+
+ while(1) {
+
+  PORTCbits.RC1 = PORTEbits.RE0;; // button 0, counter clockwise
+  PORTCbits.RC2 = PORTEbits.RE1; // button 1, clockwise
+  
+ }
+}
+
+c.) 
+
+SFR:
+
+PORTx: This SFR is used to either read data from port pins or write data to them. The PORTx 
+pins become "High" when "1" is written and become "low" when "0" is written.
+
+- PORTE: Used for choosing which of the 4 digits will be used in 7-seg.
+- PORTA: Used for displaying the data in specified digit.
+
+TRISx: This SFR is used to determine whether the I/O port is an input or an output. If it is
+"1", then the pin is input and when it is "0", the pin is output.
+
+- TRISE: This is used to specify that E port is the output.
+- TRISA: This is used to specify that A port is the output.
+
+d.) 
+
+/*
+Configuration for the code below:
+
+Connect portA to J1 Port of 4 Digit Seven Segment Module
+Jumpers of portA are : 5V, pull down ( top one to left, other to right )
+
+Connect portE to J2 Port of 4 Digit Seven Segment Module
+Jumpers of portE are : 5V, pull down ( top one to left, other to right )
+
+
+Description of the Code: 7 segment display decoder displaying values in the order 4321-5432-6543...
+*/
+
+// Hexadecimal values for digits in 7 segment
+unsigned char binary_pattern[]={0x3F,0x06,0x5B,0x4F,0x66,0x6D,0x7D,0x07,0x7F,0x6F};
+int values [] = {4, 3, 2, 1}; // Array that holds the values for the digits.
+
+void main() {
+
+     AD1PCFG = 0xFFFF;      // Configure AN pins as digital I/O
+     JTAGEN_bit = 0;        // Disable JTAG
+
+     TRISA = 0x00;  //portA is output to D
+     TRISE = 0X00;  //portE is output to AN
+
+     while(1) {
+
+        // During 996 ms, all values of the 4 digits are displayed. Then to make the total waiting time 1 second, 4 ms is added at the end.
+        int counter = 249;
+        while (counter > 0) {
+
+         // Digit 1
+         PORTA = binary_pattern[values[0]]; // Chooses the first data value
+         PORTE = 0x01; // Chooses the first digit
+         wait(1);
+
+         // Digit 2
+         PORTA = binary_pattern[values[1]]; // Chooses the second data value
+         PORTE = 0x02; // Chooses the second digit
+         wait(1);
+
+         // Digit 3
+         PORTA = binary_pattern[values[2]]; // Chooses the third data value
+         PORTE = 0x04; // Chooses the third digit
+         wait(1);
+
+         // Digit 4
+         PORTA = binary_pattern[values[3]]; // Chooses the fourth data value
+         PORTE = 0x08; // Chooses the fourth digit
+         wait(1);
+
+         counter--;
+
+        }
+
+        // Updates the digit values and if one of them exceeds 9, makes the value 1 to give the correct result.
+
+        for (int i = 0; i < 4; i++) {
+
+            values[i]++;
+            if (values[i] > 9) {
+
+                values[i] = 1;
+            }
+        }
+
+        // To make the total waiting time 1 second
+
+        wait(4);
+
+
+     }
+
+}
+
+void wait(int time) {
+
+    Delay_ms(time);
+}
+
+e.)
+
+SFR:
+
+PORTx: This SFR is used to either read data from port pins or write data to them. The PORTx 
+pins become "High" when "1" is written and become "low" when "0" is written.
+
+- PORTF: This is used to read input from push buttons.
+- PORTD: This is used as output to determine which LED is turned on.
+
+TRISx: This SFR is used to determine whether the I/O port is an input or an output. If it is
+"1", then the pin is input and when it is "0", the pin is output.
+
+- TRISF: This is used to specify that F port is input.
+- TRISD: This is used to specify that D port is the output.
+
+LATx: This SFR is used to hold the recent written data written to a I/O port.
+
+- LATD: Same functionality as PORTD.
+
+f.)
+
+	/* 
+	* Description of code: This program simulates a counter which can count with different places of LSB.
+	* Connect portD to LEDs, use 5 Volt and pull up.
+	* Connect portF to push-buttons, use 3.3V, pull up.
+	*/
+
+	char counter = 0b11111111;
+	void main() {
+
+		AD1PCFG = 0xFFFF;
+ 		DDPCON.JTAGEN = 0; // disable JTAG
+
+		TRISD = 0x0000;
+		TRISF = 0xFFFF;
+		LATD = 0xFF; // Initialize LEDs to off.
+
+		while(1) {
+
+		    PORTF = 0xFF;
+
+            if(PORTFbits.RF2 == 0) { 
+
+		// If third button is pressed, resets the counter
+                counter = 0b11111111;
+                LATD = 0xFF;
+
+            }
+
+            else if (PORTFbits.RF0 == 0) {
+
+		// Increments the counter as least significant bit being the right most one.
+                LATD = counter;
+                counter--;
+
+            }
+
+            else if (PORTFbits.RF1 == 0) {
+
+		// Increments the counter as least significant bit being the left most one.
+
+                char reverse = 0b00000000;
+
+		// Finds the matching 1's from the counter and places them in the reverse order.
+                for (int i = 0; i < 8; i++) {
+
+                    if(counter & (1 << i)) {
+
+                        reverse = reverse | 1 << (7 - i);
+                    }
+                }
+
+                LATD = reverse;
+                counter--;
+
+
+            }
+
+	    // Waits one second to see the output.
+            Delay_ms(1000);
+
+
+		}
+	}
+
+			
+		
+
+
+
+
+
+
+
+
+
+
